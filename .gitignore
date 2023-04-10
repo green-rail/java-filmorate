@@ -23,9 +23,6 @@ target/
 .springBeans
 .sts4-cache
 
-.github/workflows/api-tests.yml
-checkstyle.xml
-
 ### IntelliJ IDEA ###
 .idea
 *.iws
