@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDateTime;
 import java.time.chrono.ChronoLocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,9 +57,8 @@ public class UserController {
 
     @GetMapping
     public List<User> getUsers() {
-        return users.values().stream().toList();
+        return new ArrayList<>(users.values());
     }
-
 
     static boolean validateUser(User user) {
         if (user.getLogin().contains(" ")) {
