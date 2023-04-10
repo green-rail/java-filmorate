@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDateTime;
@@ -28,11 +27,9 @@ public class UserController {
         User newUser;
         if (!users.containsKey(user.getId())) {
             newUser = user.withId(++idCounter);
-            //newUser = new User(idCounter++, user.getEmail(), user.getLogin());
             var name = user.getName() == null || user.getName().isBlank() ?
                     user.getLogin() : user.getName();
             newUser.setName(name);
-            //newUser.setBirthday(user.getBirthday());
             users.put(newUser.getId(), newUser);
             log.info("Пользователь добавлен: {}", user);
         } else {
@@ -70,7 +67,6 @@ public class UserController {
         if (user.getBirthday().isAfter(ChronoLocalDate.from(LocalDateTime.now()))) {
             return false;
         }
-
         return true;
     }
 }
