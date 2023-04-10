@@ -1,12 +1,16 @@
 package ru.yandex.practicum.filmorate.model;
 
+//import jakarta.validation.constraints.Min;
+//import jakarta.validation.constraints.NotBlank;
+//import jakarta.validation.constraints.NotEmpty;
+//import jakarta.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 @Data
@@ -17,7 +21,7 @@ public class Film {
     @Setter(AccessLevel.PRIVATE)
     private int id;
 
-    @NotBlank(message = "Название не должно быть пустым.")
+    @NotEmpty(message = "Название не должно быть пустым.")
     private String    name;
 
     @NotNull(message = "Описание не может быть null")
