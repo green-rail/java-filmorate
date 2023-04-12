@@ -1,9 +1,4 @@
 package ru.yandex.practicum.filmorate.model;
-
-//import jakarta.validation.constraints.Min;
-//import jakarta.validation.constraints.NotBlank;
-//import jakarta.validation.constraints.NotEmpty;
-//import jakarta.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -16,16 +11,16 @@ import java.time.LocalDate;
 @Data
 @Builder
 public class Film {
-    @Min(value = 0, message = "Неверный идентификатор")
+    @Min(value = 0)
     @With
     @Setter(AccessLevel.PRIVATE)
     private int id;
 
-    @NotEmpty(message = "Название не должно быть пустым.")
-    private String    name;
+    @NotEmpty()
+    private String name;
 
-    @NotNull(message = "Описание не может быть null")
-    private String    description;
+    @NotNull()
+    private String description;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
     @DateTimeFormat(pattern = "yyyy-MM-dd")

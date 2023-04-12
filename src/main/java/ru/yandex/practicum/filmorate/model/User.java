@@ -15,9 +15,9 @@ public class User {
     @Min(0)
     @With
     private final int    id;
-    @Email(message = "Некорректный email")
+    @Email()
     private final String email;
-    @NotBlank(message = "Логин не может быть пустым")
+    @NotBlank()
     private final String login;
     private String    name;
     private LocalDate birthday;

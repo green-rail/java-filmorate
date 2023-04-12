@@ -2,7 +2,9 @@ package ru.yandex.practicum.filmorate.controller;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
@@ -24,6 +26,7 @@ public class FilmController {
             1895, Month.DECEMBER, 28, 0, 0, 0);
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public Film addFilm(@Valid @RequestBody Film film) throws ValidationException {
         if (!validateFilm(film)) {
             throw new ValidationException();
@@ -50,7 +53,7 @@ public class FilmController {
             log.info("Фильм обновлен: {}", film);
         } else {
             log.warn("Фильм не найден: {}", film);
-            throw new ValidationException();
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден.");
         }
         return film;
     }
