@@ -213,6 +213,7 @@ class FilmControllerTest {
                 + "\"duration\": 22,"
                 + "\"releaseDate\": \"2012-04-23\"}", name);
     }
+
     private static String makeUserWithLogin(String login) {
         return String.format(
                 "{\"login\": \"%s\","
