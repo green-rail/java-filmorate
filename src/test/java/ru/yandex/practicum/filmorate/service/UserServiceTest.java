@@ -72,7 +72,7 @@ class UserServiceTest {
 
         var bDay = LocalDate.of(1990, 1, 1);
 
-        var user1   = userService.addUser(User.builder().login("user1").email("e@mail.ru").name("j").birthday(bDay).build()) ;
+        var user1   = userService.addUser(User.builder().login("user1").email("e@mail.ru").name("j").birthday(bDay).build());
         var friend1 = userService.addUser(User.builder().login("friend1").email("e@mail.ru").name("j").birthday(bDay).build());
         var friend2 = userService.addUser(User.builder().login("friend2").email("e@mail.ru").name("j").birthday(bDay).build());
         var friend3 = userService.addUser(User.builder().login("friend3").email("e@mail.ru").name("j").birthday(bDay).build());
