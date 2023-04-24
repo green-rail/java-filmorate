@@ -3,73 +3,84 @@ package ru.yandex.practicum.filmorate.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import javax.validation.Valid;
-import java.time.LocalDateTime;
-import java.time.chrono.ChronoLocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Collection;
 
 @Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
-    private final Map<Integer, User> users = new HashMap<>();
-    private int idCounter = 0;
+
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
     public User addUser(@Valid @RequestBody User user) throws ValidationException {
-        if (!validateUser(user)) {
-            throw new ValidationException();
-        }
-        User newUser;
-        if (!users.containsKey(user.getId())) {
-            newUser = user.withId(++idCounter);
-            var name = user.getName() == null || user.getName().isBlank() ?
-                    user.getLogin() : user.getName();
-            newUser.setName(name);
-            users.put(newUser.getId(), newUser);
-            log.info("Пользователь добавлен: {}", user);
-        } else {
-            log.warn("Пользователь уже существует: {}", user);
-            throw new ValidationException();
-        }
-        return newUser;
+        return userService.addUser(user);
     }
 
     @PutMapping()
     public User updateUser(@Valid @RequestBody User user) throws ValidationException {
-        if (!validateUser(user)) {
-            throw new ValidationException();
-        }
-        if (!users.containsKey(user.getId())) {
-            log.warn("Пользователь не найден: {}", user);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден.");
-        } else {
-            users.put(user.getId(), user);
-            log.info("Пользователь добавлен: {}", user);
-        }
-        return user;
+        return userService.updateUser(user);
     }
 
     @GetMapping
-    public List<User> getUsers() {
-        return new ArrayList<>(users.values());
+    public Collection<User> getUsers() {
+        return userService.getUsers();
     }
 
-    static boolean validateUser(User user) {
-        if (user.getLogin().contains(" ")) {
-            return false;
+    @GetMapping("/{id}")
+    public User getUser(@PathVariable("id") Long id) {
+        if (!userService.userExists(id)) {
+            throw new UserNotFoundException();
         }
-        if (user.getBirthday().isAfter(ChronoLocalDate.from(LocalDateTime.now()))) {
-            return false;
+        var user = userService.getUser(id);
+        if (user.isPresent()) {
+            return user.get();
         }
-        return true;
+        throw new UserNotFoundException();
     }
+
+    @PutMapping("/{id}/friends/{friendId}")
+    public User addFriend(@PathVariable("id") Long id, @PathVariable("friendId") Long friendId) {
+        if (!(userService.userExists(id) && userService.userExists(friendId))) {
+            throw new UserNotFoundException();
+        }
+        return userService.addFriend(id, friendId);
+    }
+
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public User removeFriend(@PathVariable("id") Long id, @PathVariable("friendId") Long friendId) {
+        if (!(userService.userExists(id) && userService.userExists(friendId))) {
+            throw new UserNotFoundException();
+        }
+        return userService.removeFriend(id, friendId);
+    }
+
+    @GetMapping("/{id}/friends")
+    public Collection<User> getFriends(@PathVariable("id") Long id) throws ValidationException {
+        if (!userService.userExists(id)) {
+            throw new UserNotFoundException();
+        }
+        return userService.getFriends(id);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public Collection<User> getCommonFriends(@PathVariable("id") Long id,
+                                             @PathVariable("otherId") Long otherId) {
+        if (!(userService.userExists(id) && userService.userExists(otherId))) {
+            throw new UserNotFoundException();
+        }
+        return userService.getCommonFriends(id, otherId);
+    }
+
 }
