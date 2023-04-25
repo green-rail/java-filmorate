@@ -15,9 +15,9 @@ import java.util.Set;
 public class User {
     @With
     private final long id;
-    @Email()
+    @Email(message = "Некорректный email")
     private final String email;
-    @NotBlank()
+    @NotBlank(message = "Логин не может быть пустым")
     private final String login;
     private String name;
     private LocalDate birthday;

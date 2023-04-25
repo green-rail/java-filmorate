@@ -118,10 +118,10 @@ public class UserService {
 
     public static Optional<String> validateUser(User user) {
         if (user.getLogin().contains(" ")) {
-            return Optional.of("логин содержит пробел.");
+            return Optional.of("логин содержит пробел");
         }
         if (user.getBirthday() == null || user.getBirthday().isAfter(ChronoLocalDate.from(LocalDateTime.now()))) {
-            return Optional.of("неверная дата рождения.");
+            return Optional.of("неверная дата рождения");
         }
         return Optional.empty();
     }
