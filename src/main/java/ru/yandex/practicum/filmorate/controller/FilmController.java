@@ -1,77 +1,87 @@
 package ru.yandex.practicum.filmorate.controller;
 
-
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exception.InvalidParamException;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import javax.validation.Valid;
-import java.time.LocalDateTime;
-import java.time.Month;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Collection;
 
 @Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmController {
-    private final Map<Integer, Film> films = new HashMap<>();
-    private int idCounter = 0;
-    private static final LocalDateTime earliestThreshold =  LocalDateTime.of(
-            1895, Month.DECEMBER, 28, 0, 0, 0);
+    private final FilmService filmService;
+    private final UserService userService;
+
+    @Autowired
+    public FilmController(FilmService filmService, UserService userService) {
+        this.filmService = filmService;
+        this.userService = userService;
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Film addFilm(@Valid @RequestBody Film film) throws ValidationException {
-        if (!validateFilm(film)) {
-            throw new ValidationException();
-        }
-        Film newFilm;
-        if (!films.containsKey(film.getId())) {
-            newFilm = film.withId(++idCounter);
-            films.put(newFilm.getId(), newFilm);
-            log.info("Фильм добавлен: {}", newFilm);
-        } else {
-            log.warn("Фильм уже существует: {}", film);
-            throw new ValidationException();
-        }
-        return newFilm;
+        return filmService.addFilm(film);
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) throws ValidationException {
-        if (!validateFilm(film)) {
-            throw new ValidationException();
-        }
-        if (films.containsKey(film.getId())) {
-            films.put(film.getId(), film);
-            log.info("Фильм обновлен: {}", film);
-        } else {
-            log.warn("Фильм не найден: {}", film);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден.");
-        }
-        return film;
+        return filmService.updateFilm(film);
     }
-
 
     @GetMapping
-    public List<Film> getFilms() {
-        return new ArrayList<>(films.values());
+    public Collection<Film> getFilms() {
+        return filmService.getFilms();
     }
 
-    static boolean validateFilm(Film film) {
-        if (film.getDescription().length() > 200) return false;
-
-        if (film.getDuration() <= 0) return false;
-
-        if (earliestThreshold.isAfter(film.getReleaseDate().atStartOfDay())) {
-            return false;
+    @GetMapping("/{id}")
+    public Film getFilm(@PathVariable("id") Long id) {
+        if (!filmService.filmExists(id)) {
+            throw new FilmNotFoundException();
         }
-        return true;
+        return filmService.getFilm(id)
+                .orElseThrow(FilmNotFoundException::new);
+    }
+
+    @PutMapping("/{id}/like/{userId}")
+    public Film setLike(@PathVariable("id") Long id,
+                        @PathVariable("userId") Long userId) {
+
+        if (!filmService.filmExists(id)) {
+            throw new FilmNotFoundException();
+        }
+        if (!userService.userExists(userId)) {
+            throw new UserNotFoundException();
+        }
+        return filmService.addLike(id, userId);
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public Film removeLike(@PathVariable Long id, @PathVariable Long userId) {
+        if (!filmService.filmExists(id)) {
+            throw new FilmNotFoundException();
+        }
+        if (!userService.userExists(userId)) {
+            throw new UserNotFoundException();
+        }
+        return filmService.removeLike(id, userId);
+    }
+
+    @GetMapping("/popular")
+    public Collection<Film> getPopular(@RequestParam(required = false, defaultValue = "10") Integer count) {
+        if (count <= 0) {
+            throw new InvalidParamException("count");
+        }
+        return filmService.getMostLiked(count);
     }
 }
