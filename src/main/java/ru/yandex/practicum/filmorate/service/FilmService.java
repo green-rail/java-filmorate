@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
@@ -19,13 +20,14 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class FilmService {
+
     private final FilmStorage storage;
     private long idCounter = 0;
     private static final LocalDateTime earliestThreshold = LocalDateTime.of(
             1895, Month.DECEMBER, 28, 0, 0, 0);
 
     @Autowired
-    public FilmService(FilmStorage storage) {
+    public FilmService(@Qualifier("filmDbStorage") FilmStorage storage) {
         this.storage = storage;
     }
 

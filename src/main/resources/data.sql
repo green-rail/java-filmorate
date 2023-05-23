@@ -14,7 +14,7 @@ VALUES
     ('Forrest Gump', 'The presidencies of Kennedy and Johnson, the Vietnam War, and the Watergate scandal, and more...', '1994-07-06', 142, 'Drama, Romance', 'PG-13'),
     ('Pulp Fiction', 'The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.', '1994-10-14', 154, 'Crime, Drama', 'R');
 
-INSERT INTO PUBLIC.LIKES (FILM_ID,USER_ID) VALUES
+INSERT INTO PUBLIC.LIKES (FILM_ID, USER_ID) VALUES
 	 (1,1),
 	 (1,2),
 	 (1,4),
@@ -24,12 +24,12 @@ INSERT INTO PUBLIC.LIKES (FILM_ID,USER_ID) VALUES
 	 (3,3),
 	 (3,5);
 
-INSERT INTO PUBLIC.FRIENDS (USER_ID,FRIEND_ID,STATUS) VALUES
-	 (1,2,true),
-	 (1,3,true),
-	 (1,4,false),
-	 (2,3,true),
-	 (2,4,true),
-	 (3,4,true),
-	 (3,5,true),
-	 (5,1,false);
+INSERT INTO PUBLIC.FRIENDS (USER_ID, FRIEND_ID) VALUES
+	 (1,2),
+	 (1,3),
+	 (1,4),
+	 (2,3),
+	 (2,4),
+	 (3,4),
+	 (3,5),
+	 (5,1);

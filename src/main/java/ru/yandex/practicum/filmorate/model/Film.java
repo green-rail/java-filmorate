@@ -33,6 +33,10 @@ public class Film {
     @Min(value = 1, message = "Продолжительность фильма должна быть больше нуля")
     private int duration;
 
+    private Rating rating;
+
+    private String genre;
+
     @Setter(AccessLevel.NONE)
     @Getter(AccessLevel.NONE)
     private final HashSet<Long> likes = new HashSet<>();
