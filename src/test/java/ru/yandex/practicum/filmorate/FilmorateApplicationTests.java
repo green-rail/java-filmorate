@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
 import ru.yandex.practicum.filmorate.storage.UserDbStorage;
@@ -101,8 +100,7 @@ public class FilmorateApplicationTests {
                 .description("Test description")
                 .releaseDate(LocalDate.of(2012, 3, 10))
                 .duration(115)
-                .genre("Comedy")
-                .rating(Rating.PG13)
+                .ratingId(3)
                 .build();
 
         filmStorage.put(movie);
@@ -114,7 +112,7 @@ public class FilmorateApplicationTests {
                 .hasValueSatisfying(film -> {
                             assertThat(film).hasFieldOrPropertyWithValue("id", 6L);
                             assertThat(film).hasFieldOrPropertyWithValue("name", "Test Movie");
-                            assertThat(film).hasFieldOrPropertyWithValue("rating", Rating.PG13);
+                            assertThat(film).hasFieldOrPropertyWithValue("ratingId", 3);
                         }
                 );
     }

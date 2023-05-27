@@ -3,12 +3,14 @@ package ru.yandex.practicum.filmorate.storage;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -17,9 +19,14 @@ import java.util.stream.Collectors;
 public class UserDbStorage implements UserStorage {
 
     private final JdbcTemplate jdbcTemplate;
+    private final SimpleJdbcInsert jdbcUserInsert;
 
     public UserDbStorage(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.jdbcUserInsert = new SimpleJdbcInsert(jdbcTemplate)
+                .withTableName("PUBLIC.USERS")
+                .usingColumns("EMAIL", "LOGIN", "NAME", "BIRTHDAY")
+                .usingGeneratedKeyColumns("USER_ID");
     }
 
     @Override
@@ -48,28 +55,51 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void put(User user) {
-        String sql = "INSERT INTO PUBLIC.USERS (EMAIL, LOGIN, NAME, BIRTHDAY) " +
-                "values (?, ?, ?, ?)";
-        jdbcTemplate.update(
-                sql,
-                user.getEmail(),
-                user.getLogin(),
-                user.getName(),
-                user.getBirthday()
-        );
+
+
+        final long userIndex = jdbcUserInsert.executeAndReturnKey(Map.of(
+                "EMAIL",    user.getEmail(),
+                "LOGIN",    user.getLogin(),
+                "NAME",     user.getName(),
+                "BIRTHDAY", user.getBirthday()
+        )).longValue();
 
         if (user.getFriends().size() == 0) {
             return;
         }
 
-        sql = "INSERT INTO PUBLIC.FRIENDS (USER_ID, FRIEND_ID) values (?, ?)";
+        String sql = "INSERT INTO PUBLIC.FRIENDS (USER_ID, FRIEND_ID) values (?, ?)";
         jdbcTemplate.batchUpdate(
                 sql,
                 user.getFriends()
                         .stream()
-                        .map(id -> new Object[]{user.getId(), id})
+                        .map(id -> new Object[]{userIndex, id})
                         .collect(Collectors.toList())
         );
+    }
+
+    @Override
+    public void update(User user) {
+        String sql = "UPDATE PUBLIC.USERS SET email = ?, login = ?, name = ?, birthday = ? WHERE user_id = ?";
+        jdbcTemplate.update(sql,
+                user.getEmail(),
+                user.getLogin(),
+                user.getName(),
+                user.getBirthday(),
+                user.getId()
+        );
+    }
+
+    @Override
+    public void addFriend(long userId, long friendId) {
+        String sql = "INSERT INTO PUBLIC.FRIENDS(user_id, friend_id) values (?, ?)";
+        jdbcTemplate.update(sql, userId, friendId);
+    }
+
+    @Override
+    public void removeFriend(long userId, long friendId) {
+        String sql = "DELETE FROM PUBLIC.FRIENDS where user_id = ? and friend_id = ?";
+        jdbcTemplate.update(sql, userId, friendId);
     }
 
     private class UserRawMapper implements RowMapper<User> {

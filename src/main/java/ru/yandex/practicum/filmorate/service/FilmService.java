@@ -6,8 +6,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
 import java.time.LocalDateTime;
@@ -22,7 +25,6 @@ import java.util.stream.Collectors;
 public class FilmService {
 
     private final FilmStorage storage;
-    private long idCounter = 0;
     private static final LocalDateTime earliestThreshold = LocalDateTime.of(
             1895, Month.DECEMBER, 28, 0, 0, 0);
 
@@ -36,8 +38,9 @@ public class FilmService {
         if (validationMessage.isPresent()) {
             throw new ValidationException("Некорректный фильм: " + validationMessage.get());
         }
-        Film newFilm = film.withId(++idCounter);
-        storage.put(newFilm);
+        stripDuplicates(film);
+        long id = storage.put(film);
+        Film newFilm = film.withId(id);
         log.info("Фильм добавлен: {}", newFilm);
         return newFilm;
     }
@@ -46,6 +49,7 @@ public class FilmService {
         var optFilm = storage.getFilm(id);
         if (optFilm.isPresent()) {
             optFilm.get().addLike(userId);
+            storage.addLike(id, userId);
             return optFilm.get();
         }
         throw new FilmNotFoundException();
@@ -63,6 +67,7 @@ public class FilmService {
         var optFilm = storage.getFilm(id);
         if (optFilm.isPresent()) {
             optFilm.get().removeLike(userId);
+            storage.removeLike(id, userId);
             return optFilm.get();
         }
         throw new FilmNotFoundException();
@@ -80,13 +85,30 @@ public class FilmService {
                 .collect(Collectors.toUnmodifiableList());
     }
 
+    public Collection<Genre> getGenres() {
+        return  storage.getAllGenres();
+    }
+
+    public Genre getGenre(Integer id) {
+        return storage.getGenre(id).orElseThrow(FilmNotFoundException::new);
+    }
+
+    public Mpa getMpa(Integer id) {
+        return storage.getMpa(id).orElseThrow(ResourceNotFoundException::new);
+    }
+
+    public Collection<Mpa> getMpas() {
+        return storage.getAllMpas();
+    }
+
     public Film updateFilm(Film film) throws ValidationException, ResponseStatusException {
         var validationMessage = validateFilm(film);
         if (validationMessage.isPresent()) {
             throw new ValidationException("Некорректный фильм: " + validationMessage.get());
         }
         if (storage.indexExists(film.getId())) {
-            storage.put(film);
+            stripDuplicates(film);
+            storage.updateFilm(film);
             log.info("Фильм обновлен: {}", film);
         } else {
             log.warn("Фильм не найден: {}", film);
@@ -94,7 +116,6 @@ public class FilmService {
         }
         return film;
     }
-
 
     public static Optional<String> validateFilm(Film film) {
         if (film.getDescription().length() > 200) {
@@ -107,5 +128,15 @@ public class FilmService {
             return Optional.of("неверная дата выхода.");
         }
         return Optional.empty();
+    }
+
+    private static void stripDuplicates(Film film) {
+        if (film.getGenres() != null && film.getGenres().size() > 1) {
+            film.setGenres(film.getGenres().stream()
+                    .sorted(Comparator.comparingInt(Genre::getId))
+                    .distinct()
+                    .collect(Collectors.toList())
+            );
+        }
     }
 }

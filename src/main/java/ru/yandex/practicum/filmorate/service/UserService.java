@@ -50,7 +50,7 @@ public class UserService {
             log.warn("Пользователь не найден: {}", user);
             throw new UserNotFoundException();
         } else {
-            storage.put(user);
+            storage.update(user);
             log.info("Пользователь добавлен: {}", user);
         }
         return user;
@@ -69,7 +69,8 @@ public class UserService {
         var user2 = storage.getUser(friendId);
         if (user1.isPresent() && user2.isPresent()) {
             user1.get().addFriend(user2.get().getId());
-            user2.get().addFriend(user1.get().getId());
+            storage.addFriend(id, friendId);
+            //user2.get().addFriend(user1.get().getId());
             return user1.get();
         }
         throw new UserNotFoundException();
@@ -80,7 +81,8 @@ public class UserService {
         var user2 = storage.getUser(friendId);
         if (user1.isPresent() && user2.isPresent()) {
             user1.get().removeFriend(user2.get().getId());
-            user2.get().removeFriend(user1.get().getId());
+            //user2.get().removeFriend(user1.get().getId());
+            storage.removeFriend(id, friendId);
             return user1.get();
         }
         throw new UserNotFoundException();
