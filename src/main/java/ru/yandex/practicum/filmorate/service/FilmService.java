@@ -124,6 +124,9 @@ public class FilmService {
         if (film.getDuration() <= 0) {
             return Optional.of("продолжительность должна быть больше 0.");
         }
+        if (film.getMpa() == null) {
+            return Optional.of("отсутствует рейтинг mpa.");
+        }
         if (earliestThreshold.isAfter(film.getReleaseDate().atStartOfDay())) {
             return Optional.of("неверная дата выхода.");
         }

@@ -14,6 +14,8 @@ import java.util.Optional;
 public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
 
+    private long filmId = 0;
+
     @Override
     public boolean indexExists(long id) {
         return films.containsKey(id);
@@ -25,13 +27,14 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     public long put(Film film) {
-        films.put(film.getId(), film);
-        return film.getId();
+        var newFilm = film.withId(filmId++);
+        films.put(newFilm.getId(), newFilm);
+        return newFilm.getId();
     }
 
     @Override
     public void updateFilm(Film film) {
-        put(film);
+        films.put(film.getId(), film);
     }
 
     public Collection<Film> getAll() {

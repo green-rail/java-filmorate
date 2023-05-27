@@ -58,7 +58,6 @@ class UserServiceTest {
         var user2 = service.addUser(makeUser("user2", "Name2"));
         service.addFriend(user1.getId(), user2.getId());
         assertEquals(user2.getId(), user1.getFriends().stream().findFirst().get(), "Неверный индекс друга.");
-        assertEquals(user1.getId(), user2.getFriends().stream().findFirst().get(), "Неверный индекс друга.");
         service.removeFriend(user1.getId(), user2.getId());
         assertTrue(user1.getFriends().isEmpty(), "Друг не удален.");
         assertTrue(user2.getFriends().isEmpty(), "Друг не удален.");

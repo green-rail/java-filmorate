@@ -138,11 +138,6 @@ public class FilmDbStorage implements FilmStorage {
         return Optional.ofNullable(mpaCache.get(id));
     }
 
-    private Collection<Mpa> loadMpas() {
-        String sql = "select * from PUBLIC.MPA";
-        return jdbcTemplate.query(sql, new MpaRowMapper());
-    }
-
     @Override
     public Collection<Mpa> getAllMpas() {
         return mpaCache.values();
@@ -160,6 +155,11 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(sql, filmId, userId);
     }
 
+    private Collection<Mpa> loadMpas() {
+        String sql = "select * from PUBLIC.MPA";
+        return jdbcTemplate.query(sql, new MpaRowMapper());
+    }
+
     private class FilmRowMapper implements RowMapper<Film> {
         public Film mapRow(ResultSet rs, int rowNum) throws SQLException {
             int id = rs.getInt("film_id");
@@ -169,9 +169,7 @@ public class FilmDbStorage implements FilmStorage {
             int duration = rs.getInt("duration");
             int mpaId = rs.getInt("mpa_id");
             var origin = mpaCache.get(mpaId);
-            var mpa = new Mpa();
-            mpa.setId(origin.getId());
-            mpa.setName(origin.getName());
+            var mpa = Mpa.builder().id(origin.getId()).name(origin.getName()).build();
             Film film =  Film.builder()
                     .id(id)
                     .name(name)
@@ -211,10 +209,11 @@ public class FilmDbStorage implements FilmStorage {
         public Mpa mapRow(ResultSet rs, int rowNum) throws SQLException {
             int id = rs.getInt("mpa_id");
             String name = rs.getString("mpa_name");
-            var mpa = new Mpa();
-            mpa.setId(id);
-            mpa.setName(name);
-            return mpa;
+            //var mpa = new Mpa();
+            //mpa.setId(id);
+            //mpa.setName(name);
+            //return mpa;
+            return Mpa.builder().id(id).name(name).build();
         }
     }
 }

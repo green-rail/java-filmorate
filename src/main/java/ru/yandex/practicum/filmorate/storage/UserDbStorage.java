@@ -55,8 +55,6 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void put(User user) {
-
-
         final long userIndex = jdbcUserInsert.executeAndReturnKey(Map.of(
                 "EMAIL",    user.getEmail(),
                 "LOGIN",    user.getLogin(),

@@ -3,10 +3,12 @@ package ru.yandex.practicum.filmorate.service;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -46,7 +48,8 @@ class FilmServiceTest {
         addLikes(service, film3, 3L);
         addLikes(service, film4, 900L);
         addLikes(service, film5, 4L);
-        assertIterableEquals(List.of(film4, film2, film1), service.getMostLiked(3));
+        assertIterableEquals(List.of(film4.getId(), film2.getId(), film1.getId()),
+                service.getMostLiked(3).stream().map(Film::getId).collect(Collectors.toList()));
     }
 
 
@@ -76,6 +79,7 @@ class FilmServiceTest {
                 .description("Description")
                 .releaseDate(LocalDate.of(2007, 5, 3))
                 .duration(120)
+                .mpa(Mpa.builder().id(1).name("G").build())
                 .build();
     }
 }
