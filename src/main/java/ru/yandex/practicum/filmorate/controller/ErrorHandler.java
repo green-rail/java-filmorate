@@ -10,17 +10,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.MethodNotAllowedException;
 import org.springframework.web.servlet.NoHandlerFoundException;
-import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
-import ru.yandex.practicum.filmorate.exception.InvalidParamException;
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.exception.*;
 import ru.yandex.practicum.filmorate.model.ErrorResponse;
 
 
 @RestControllerAdvice
 public class ErrorHandler {
 
-    @ExceptionHandler(value = {UserNotFoundException.class, FilmNotFoundException.class})
+    @ExceptionHandler(value = {UserNotFoundException.class, FilmNotFoundException.class, ResourceNotFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFoundException(final RuntimeException e) {
         return new ErrorResponse(e.getMessage());
@@ -72,4 +69,5 @@ public class ErrorHandler {
         System.out.println(e.getClass());
         return new ErrorResponse("Произошла непредвиденная ошибка.");
     }
+
 }

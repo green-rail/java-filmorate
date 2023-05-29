@@ -1,9 +1,11 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
@@ -16,6 +18,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@AutoConfigureTestDatabase
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class FilmControllerTest {
 
@@ -93,6 +97,7 @@ class FilmControllerTest {
                                 "{\"name\": \"FilmName\","
                                         + "\"description\": \"descriptionItem\","
                                         + "\"duration\": 22,"
+                                        + "\"mpa\": { \"id\": 1}, "
                                         + "\"releaseDate\": \"2012-04-23\"}"))
                 .andExpect(status().isCreated());
 
@@ -107,6 +112,7 @@ class FilmControllerTest {
                                 "{\"id\": 9999, \"name\": \"FilmName\","
                                         + "\"description\": \"Updated description\","
                                         + "\"duration\": 120,"
+                                        + "\"mpa\": { \"id\": 1}, "
                                         + "\"releaseDate\": \"2012-04-23\"}"))
                 .andExpect(status().isNotFound());
         mockMvc.perform(put("/films")
@@ -115,6 +121,7 @@ class FilmControllerTest {
                                 "{\"id\": 1, \"name\": \"FilmName\","
                                         + "\"description\": \"Updated description\","
                                         + "\"duration\": 120,"
+                                        + "\"mpa\": { \"id\": 1}, "
                                         + "\"releaseDate\": \"2012-04-23\"}"))
                 .andExpect(status().isOk());
 
@@ -133,6 +140,7 @@ class FilmControllerTest {
                                 "{\"name\": \"FilmName\","
                                         + "\"description\": \"descriptionItem\","
                                         + "\"duration\": 22,"
+                                        + "\"mpa\": { \"id\": 1}, "
                                         + "\"releaseDate\": \"2012-04-23\"}"))
                 .andExpect(status().isCreated());
 
@@ -211,6 +219,7 @@ class FilmControllerTest {
                  "{\"name\": \"%s\","
                 + "\"description\": \"descriptionItem\","
                 + "\"duration\": 22,"
+                + "\"mpa\": { \"id\": 1}, "
                 + "\"releaseDate\": \"2012-04-23\"}", name);
     }
 
@@ -218,9 +227,9 @@ class FilmControllerTest {
         return String.format(
                 "{\"login\": \"%s\","
                 + "\"name\": \"Nick Name\","
-                + "\"email\": \"email@mail.ru\","
+                + "\"email\": \"email%s@mail.ru\","
                 + "\"birthday\": \"1990-04-23\"}",
-                login);
+                login, login);
     }
 
 }

@@ -8,9 +8,7 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 
 @Data
 @Builder
@@ -33,6 +31,10 @@ public class Film {
     @Min(value = 1, message = "Продолжительность фильма должна быть больше нуля")
     private int duration;
 
+    private Mpa mpa;
+
+    private List<Genre> genres = new ArrayList<>();
+
     @Setter(AccessLevel.NONE)
     @Getter(AccessLevel.NONE)
     private final HashSet<Long> likes = new HashSet<>();
@@ -43,6 +45,15 @@ public class Film {
 
     public boolean removeLike(Long userId) {
         return likes.remove(userId);
+    }
+
+
+    public void addGenre(Genre genre) {
+        genres.add(genre);
+    }
+
+    public void removeGenre(Genre genre) {
+        genres.remove(genre);
     }
 
     public int getLikesCount() {

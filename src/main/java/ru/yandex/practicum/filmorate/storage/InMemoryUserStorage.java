@@ -31,4 +31,18 @@ public class InMemoryUserStorage implements UserStorage {
     public void put(User user) {
         users.put(user.getId(), user);
     }
+
+    @Override
+    public void update(User user) {
+        put(user);
+    }
+
+    @Override
+    public void addFriend(long userId, long friendId) {
+    }
+
+    @Override
+    public void removeFriend(long userId, long friendId) {
+    }
+
 }

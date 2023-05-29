@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.controller;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import javax.validation.ConstraintViolation;
@@ -31,6 +32,7 @@ public class FilmControllerValidationTest {
                 .description("The best Chris Nolan's movie.")
                 .releaseDate(LocalDate.of(2007, 5, 3))
                 .duration(120)
+                .mpa(Mpa.builder().id(1).name("G").build())
                 .build();
     }
 
