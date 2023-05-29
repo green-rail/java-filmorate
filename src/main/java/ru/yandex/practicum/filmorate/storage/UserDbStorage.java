@@ -5,6 +5,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.ResultSet;
@@ -45,16 +47,29 @@ public class UserDbStorage implements UserStorage {
     @Override
     public Optional<User> getUser(long id) {
         String sql = "select * from users where user_id = ?";
+        if (!indexExists(id)) {
+            return Optional.empty();
+        }
         try {
             User user = jdbcTemplate.queryForObject(sql, new UserRawMapper(), id);
             return Optional.ofNullable(user);
         } catch (Exception e) {
-            return Optional.empty();
+            throw new UserNotFoundException();
         }
     }
 
     @Override
     public void put(User user) {
+        String sql = "select count(*) from users where login = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, user.getLogin());
+        if (count != null && count > 0) {
+            throw new ValidationException("Логин уже существует.");
+        }
+        sql = "select count(*) from users where email = ?";
+        count = jdbcTemplate.queryForObject(sql, Integer.class, user.getEmail());
+        if (count != null && count > 0) {
+            throw new ValidationException("Email уже существует.");
+        }
         final long userIndex = jdbcUserInsert.executeAndReturnKey(Map.of(
                 "EMAIL",    user.getEmail(),
                 "LOGIN",    user.getLogin(),
@@ -66,7 +81,7 @@ public class UserDbStorage implements UserStorage {
             return;
         }
 
-        String sql = "INSERT INTO PUBLIC.FRIENDS (USER_ID, FRIEND_ID) values (?, ?)";
+        sql = "INSERT INTO PUBLIC.FRIENDS (USER_ID, FRIEND_ID) values (?, ?)";
         jdbcTemplate.batchUpdate(
                 sql,
                 user.getFriends()

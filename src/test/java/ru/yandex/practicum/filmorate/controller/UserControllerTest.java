@@ -47,7 +47,7 @@ class UserControllerTest {
     public void getUserById() throws Exception {
         mockMvc.perform(post("/users")
                         .contentType("application/json")
-                        .content(makeUserString("login", "name")))
+                        .content(makeUserString("login", "name", "email@mail.ru")))
                 .andExpect(status().is(201));
 
         mockMvc.perform(get("/users/1"))
@@ -59,7 +59,7 @@ class UserControllerTest {
 
         mockMvc.perform(post("/users")
                         .contentType("application/json")
-                        .content(makeUserString("Login withspace", "Username")))
+                        .content(makeUserString("Login withspace", "Username", "email@mail.ru")))
                 .andExpect(status().is(400));
 
         mockMvc.perform(post("/users")
@@ -83,7 +83,7 @@ class UserControllerTest {
     public void userControllerCreateValidAndUpdate() throws Exception {
         mockMvc.perform(post("/users")
                         .contentType("application/json")
-                        .content(makeUserString("UserLogin", "User Name")))
+                        .content(makeUserString("UserLogin", "User Name", "email@mail.ru")))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(get("/users"))
@@ -120,7 +120,7 @@ class UserControllerTest {
         mockMvc.perform(delete("/users/1/friends/2")).andExpect(status().is(404));
         mockMvc.perform(post("/users")
                         .contentType("application/json")
-                        .content(makeUserString("UserLogin1", "User Name")))
+                        .content(makeUserString("UserLogin1", "User Name", "email@mail.ru")))
                 .andExpect(status().isCreated());
         mockMvc.perform(put("/users/1/friends/2")).andExpect(status().is(404));
         mockMvc.perform(delete("/users/1/friends/2")).andExpect(status().is(404));
@@ -167,22 +167,22 @@ class UserControllerTest {
     private void createUserWithFriends() throws Exception {
         mockMvc.perform(post("/users")
                         .contentType("application/json")
-                        .content(makeUserString("UserLogin1", "User Name")))
+                        .content(makeUserString("UserLogin1", "User Name", "email1@mail.ru")))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/users")
                         .contentType("application/json")
-                        .content(makeUserString("FriendLogin2", "Friend 2")))
+                        .content(makeUserString("FriendLogin2", "Friend 2", "email2@mail.ru")))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/users")
                         .contentType("application/json")
-                        .content(makeUserString("FriendLogin3", "Friend 3")))
+                        .content(makeUserString("FriendLogin3", "Friend 3", "email3@mail.ru")))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/users")
                         .contentType("application/json")
-                        .content(makeUserString("FriendLogin4", "Friend 4")))
+                        .content(makeUserString("FriendLogin4", "Friend 4", "email4@mail.ru")))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(put("/users/1/friends/2")).andExpect(status().isOk());
@@ -194,11 +194,11 @@ class UserControllerTest {
     }
 
 
-    private static String makeUserString(String login, String name) {
+    private static String makeUserString(String login, String name, String email) {
         return String.format(
                  "{\"login\": \"%s\","
                 + "\"name\": \"%s\","
-                + "\"email\": \"email@mail.ru\","
-                + "\"birthday\": \"1990-04-23\"}", login, name);
+                + "\"email\": \"%s\","
+                + "\"birthday\": \"1990-04-23\"}", login, name, email);
     }
 }

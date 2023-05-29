@@ -1,13 +1,14 @@
 package ru.yandex.practicum.filmorate.storage;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,17 +21,23 @@ public class FilmDbStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
     private final SimpleJdbcInsert jdbcFilmInsert;
+    private final MpaStorage mpaStorage;
+    private final GenreStorage genreStorage;
 
-    private final Map<Integer, Mpa> mpaCache = new HashMap<>();
 
-    public FilmDbStorage(JdbcTemplate jdbcTemplate) {
+    @Autowired
+    public FilmDbStorage(JdbcTemplate jdbcTemplate,
+                         @Qualifier("mpaDbStorage") MpaStorage mpaStorage,
+                         @Qualifier("genreDbStorage") GenreStorage genreStorage) {
+        this.mpaStorage = mpaStorage;
+        this.genreStorage = genreStorage;
         this.jdbcTemplate = jdbcTemplate;
         this.jdbcFilmInsert = new SimpleJdbcInsert(jdbcTemplate)
                 .withTableName("PUBLIC.FILMS")
                 .usingColumns("FILM_NAME", "DESCRIPTION", "RELEASE_DATE", "DURATION", "MPA_ID")
                 .usingGeneratedKeyColumns("FILM_ID");
 
-        loadMpas().forEach(mpa -> mpaCache.put(mpa.getId(), mpa));
+        //loadMpas().forEach(mpa -> mpaCache.put(mpa.getId(), mpa));
     }
 
     @Override
@@ -42,12 +49,15 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Optional<Film> getFilm(long id) {
+        if (!indexExists(id)) {
+            return Optional.empty();
+        }
         String sql = "select * from PUBLIC.FILMS where film_id = ?";
         try {
             Film film = jdbcTemplate.queryForObject(sql, new FilmRowMapper(), id);
             return Optional.ofNullable(film);
-        } catch (Exception ignored) {
-            return Optional.empty();
+        } catch (Exception e) {
+            throw new FilmNotFoundException();
         }
     }
 
@@ -60,7 +70,7 @@ public class FilmDbStorage implements FilmStorage {
                 "DESCRIPTION",  film.getDescription(),
                 "RELEASE_DATE", film.getReleaseDate(),
                 "DURATION",     film.getDuration(),
-                "MPA_ID",    film.getMpa().getId()
+                "MPA_ID",       film.getMpa().getId()
         )).longValue();
 
         if (film.getLikesCount() > 0) {
@@ -87,6 +97,9 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public void updateFilm(Film film) {
+        if (!indexExists(film.getId())) {
+            throw new FilmNotFoundException();
+        }
         String sql = "UPDATE PUBLIC.FILMS SET "
                 + "film_name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE film_id = ?";
         jdbcTemplate.update(sql,
@@ -117,33 +130,6 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public Optional<Genre> getGenre(int id) {
-        String sql = "select * from PUBLIC.GENRES where genre_id = ?";
-        try {
-            Genre genre = jdbcTemplate.queryForObject(sql, new GenreRowMapper(), id);
-            return Optional.ofNullable(genre);
-        } catch (Exception ignored) {
-            return Optional.empty();
-        }
-    }
-
-    @Override
-    public Collection<Genre> getAllGenres() {
-        String sql = "select * from PUBLIC.GENRES";
-        return jdbcTemplate.query(sql, new GenreRowMapper());
-    }
-
-    @Override
-    public Optional<Mpa> getMpa(int id) {
-        return Optional.ofNullable(mpaCache.get(id));
-    }
-
-    @Override
-    public Collection<Mpa> getAllMpas() {
-        return mpaCache.values();
-    }
-
-    @Override
     public void addLike(long filmId, long userId) {
         String sql = "INSERT INTO PUBLIC.LIKES(film_id, user_id) values (?, ?)";
         jdbcTemplate.update(sql, filmId, userId);
@@ -155,11 +141,6 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(sql, filmId, userId);
     }
 
-    private Collection<Mpa> loadMpas() {
-        String sql = "select * from PUBLIC.MPA";
-        return jdbcTemplate.query(sql, new MpaRowMapper());
-    }
-
     private class FilmRowMapper implements RowMapper<Film> {
         public Film mapRow(ResultSet rs, int rowNum) throws SQLException {
             int id = rs.getInt("film_id");
@@ -167,9 +148,10 @@ public class FilmDbStorage implements FilmStorage {
             String description = rs.getString("description");
             LocalDate releaseDate = rs.getDate("release_date").toLocalDate();
             int duration = rs.getInt("duration");
+
             int mpaId = rs.getInt("mpa_id");
-            var origin = mpaCache.get(mpaId);
-            var mpa = Mpa.builder().id(origin.getId()).name(origin.getName()).build();
+            var mpa = mpaStorage.getMpa(mpaId).orElseThrow();
+
             Film film =  Film.builder()
                     .id(id)
                     .name(name)
@@ -182,38 +164,9 @@ public class FilmDbStorage implements FilmStorage {
             jdbcTemplate.queryForList(sql, Long.class, film.getId())
                     .forEach(film::addLike);
 
-            sql = "SELECT g.genre_id, g.genre_name "
-                  + "FROM films f "
-                  + "JOIN films_genres fg ON f.film_id = fg.film_id "
-                  + "JOIN genres g ON fg.genre_id = g.genre_id "
-                  + "WHERE f.film_id = ?;";
-
             film.setGenres(new ArrayList<>());
-            jdbcTemplate.query(sql, new GenreRowMapper(), id).forEach(film::addGenre);
+            genreStorage.getGenresForFilm(id).forEach(film::addGenre);
             return film;
-        }
-    }
-
-    private static class GenreRowMapper implements  RowMapper<Genre> {
-        public Genre mapRow(ResultSet rs, int rowNum) throws SQLException {
-            int id = rs.getInt("genre_id");
-            String name = rs.getString("genre_name");
-            var g = new Genre();
-            g.setId(id);
-            g.setName(name);
-            return g;
-        }
-    }
-
-    private static class MpaRowMapper implements  RowMapper<Mpa> {
-        public Mpa mapRow(ResultSet rs, int rowNum) throws SQLException {
-            int id = rs.getInt("mpa_id");
-            String name = rs.getString("mpa_name");
-            //var mpa = new Mpa();
-            //mpa.setId(id);
-            //mpa.setName(name);
-            //return mpa;
-            return Mpa.builder().id(id).name(name).build();
         }
     }
 }

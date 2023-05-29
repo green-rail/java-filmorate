@@ -227,9 +227,9 @@ class FilmControllerTest {
         return String.format(
                 "{\"login\": \"%s\","
                 + "\"name\": \"Nick Name\","
-                + "\"email\": \"email@mail.ru\","
+                + "\"email\": \"email%s@mail.ru\","
                 + "\"birthday\": \"1990-04-23\"}",
-                login);
+                login, login);
     }
 
 }

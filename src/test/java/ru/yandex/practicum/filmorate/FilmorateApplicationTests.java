@@ -6,11 +6,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
+import ru.yandex.practicum.filmorate.exception.ResourceNotFoundException;
+import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.GenreDbStorage;
+import ru.yandex.practicum.filmorate.storage.MpaDbStorage;
 import ru.yandex.practicum.filmorate.storage.UserDbStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
 import java.util.Optional;
-
 
 
 @SpringBootTest
@@ -30,6 +37,14 @@ public class FilmorateApplicationTests {
 
     private final FilmDbStorage filmStorage;
 
+    private final MpaDbStorage mpaStorage;
+
+    private final GenreDbStorage genreDbStorage;
+
+    private final FilmService filmService;
+
+    private final UserService userService;
+
     @Test
     @DirtiesContext
     public void getAllUsers() {
@@ -37,6 +52,8 @@ public class FilmorateApplicationTests {
         addTestUser();
         assertEquals(1, userStorage.getUsers().size());
     }
+
+
 
     @Test
     @DirtiesContext
@@ -59,7 +76,7 @@ public class FilmorateApplicationTests {
     public void putUser() {
         addTestUser();
         var u = User.builder()
-                .email("test@email.ru")
+                .email("test1@email.ru")
                 .login("test_user2")
                 .name("Testname")
                 .birthday(LocalDate.of(1990, 3, 2))
@@ -71,10 +88,30 @@ public class FilmorateApplicationTests {
                 .isPresent()
                 .hasValueSatisfying(user -> {
                         assertThat(user).hasFieldOrPropertyWithValue("id", 2L);
-                        assertThat(user).hasFieldOrPropertyWithValue("email", "test@email.ru");
+                        assertThat(user).hasFieldOrPropertyWithValue("email", "test1@email.ru");
                         assertThat(user).hasFieldOrPropertyWithValue("login", "test_user2");
                     }
                 );
+    }
+
+    @Test
+    @DirtiesContext
+    public void userAddFail() {
+        addTestUser();
+        var userWithSameLogin = User.builder()
+                .email("new@email.ru")
+                .login("test_login")
+                .name("Testname")
+                .birthday(LocalDate.of(1990, 3, 2))
+                .build();
+        var userWithSameEmail = User.builder()
+                .email("test@email.ru")
+                .login("new_login")
+                .name("Testname")
+                .birthday(LocalDate.of(1990, 3, 2))
+                .build();
+        assertThrows(ValidationException.class, () -> userStorage.put(userWithSameLogin));
+        assertThrows(ValidationException.class, () -> userStorage.put(userWithSameEmail));
     }
 
     @Test
@@ -115,6 +152,14 @@ public class FilmorateApplicationTests {
         userStorage.removeFriend(1L, 2L);
         userOptional = userStorage.getUser(1L);
         assertEquals(0, userOptional.get().getFriends().size());
+    }
+
+    @Test
+    @DirtiesContext
+    public void failAddRemoveFriend() {
+        addTestUser();
+        assertThrows(UserNotFoundException.class, () -> userService.addFriend(1L, 100L));
+        assertThrows(UserNotFoundException.class, () -> userService.removeFriend(1L, 100L));
     }
 
     @Test
@@ -201,8 +246,32 @@ public class FilmorateApplicationTests {
     }
 
     @Test
+    @DirtiesContext
+    public void updateFilmFail() {
+        addTestFilm();
+        var updatedFilm = Film.builder()
+                .id(100L)
+                .name("Updated name")
+                .description("Updated description")
+                .releaseDate(LocalDate.of(2012, 3, 10))
+                .duration(115)
+                .mpa(Mpa.builder().id(1).build())
+                .build();
+        assertThrows(FilmNotFoundException.class, () -> filmStorage.updateFilm(updatedFilm));
+    }
+
+
+
+    @Test
+    @DirtiesContext
+    public void getMpaFail() {
+        assertThrows(ResourceNotFoundException.class, () -> filmService.getMpa(100));
+    }
+
+
+    @Test
     public void testGenres() {
-        Optional<Genre> genreOpt = filmStorage.getGenre(1);
+        Optional<Genre> genreOpt = genreDbStorage.getGenre(1);
         assertThat(genreOpt)
                 .isPresent()
                 .hasValueSatisfying(f -> {
@@ -211,15 +280,15 @@ public class FilmorateApplicationTests {
                         }
                 );
 
-        Optional<Genre> genreOptEmpty = filmStorage.getGenre(999);
+        Optional<Genre> genreOptEmpty = genreDbStorage.getGenre(999);
         assertThat(genreOptEmpty).isNotPresent();
 
-        assertEquals(6, filmStorage.getAllGenres().size());
+        assertEquals(6, genreDbStorage.getAllGenres().size());
     }
 
     @Test
     public void testMpa() {
-        Optional<Mpa> mpaOpt = filmStorage.getMpa(1);
+        Optional<Mpa> mpaOpt = mpaStorage.getMpa(1);
         assertThat(mpaOpt)
                 .isPresent()
                 .hasValueSatisfying(f -> {
@@ -228,10 +297,10 @@ public class FilmorateApplicationTests {
                         }
                 );
 
-        Optional<Mpa> mpaOptEmpty = filmStorage.getMpa(999);
+        Optional<Mpa> mpaOptEmpty = mpaStorage.getMpa(999);
         assertThat(mpaOptEmpty).isNotPresent();
 
-        assertEquals(5, filmStorage.getAllMpas().size());
+        assertEquals(5, mpaStorage.getAllMpas().size());
     }
 
     @Test
@@ -245,6 +314,17 @@ public class FilmorateApplicationTests {
         filmStorage.removeLike(1, 1);
         filmOpt = filmStorage.getFilm(1L);
         assertEquals(0, filmOpt.get().getLikes().size());
+    }
+
+    @Test
+    @DirtiesContext
+    public void addRemoveLikeFail() {
+        addTestFilm();
+        addTestUser();
+        assertThrows(FilmNotFoundException.class, () -> filmService.addLike(100L, 1L));
+        assertThrows(FilmNotFoundException.class, () -> filmService.removeLike(100L, 1L));
+        assertThrows(UserNotFoundException.class, () -> filmService.addLike(1L, 100L));
+        assertThrows(UserNotFoundException.class, () -> filmService.removeLike(1L, 100L));
     }
 
 
